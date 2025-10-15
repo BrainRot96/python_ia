@@ -1,0 +1,221 @@
+for i in range(1, 11):
+    print(i)
+
+for n in range(1, 21):
+    if n % 2 == 0:
+        print(f"{n} est pair")
+
+
+plantes = ["lavande", "gaura", "sauge", "echinacea", "achillée"]
+for p in plantes:
+    print(f"J’aime associer {p} en massif en plein soleil.")
+
+for i, p in enumerate(plantes, start=1):
+    print(f"{i}. {p}")
+
+notes = [12, 15, 9, 18, 16]
+somme = 0
+for n in notes:
+    somme += n
+moyenne = somme / len(notes)
+print("Somme :", somme, "| Moyenne :", moyenne)
+
+plantes_expo = [
+    ("lavande", "plein soleil"),
+    ("hosta", "ombre"),
+    ("gaura", "soleil"),
+    ("fougère", "ombre"),
+]
+selection = []
+for nom, expo in plantes_expo:
+    if "soleil" in expo:
+        selection.append(nom)
+print("Plantes soleil :", selection)
+
+c = 1
+while c <= 5:
+    print("c =", c)
+    c += 1
+
+couleurs = ["rouge", "jaune", "violet"]
+formes = ["boule", "épis", "port dressé"]
+idees = []
+for c in couleurs:
+    for f in formes:
+        idees.append(f"Massif {c} – {f}")
+print(idees)
+
+couleurs = ["rouge", "jaune", "violet"]
+formes = ["boule", "épis", "port dressé"]
+saisons = ["printemps", "été"]
+
+idees = []
+
+for c in couleurs:
+    for f in formes:
+        for s in saisons:
+            idees.append(f"Massif {c} – {f} – {s}")
+            
+print("\n🌿 Liste des idées de massifs :\n")
+for idee in idees:
+    print(idee)
+
+from itertools import product
+from random import shuffle
+
+couleurs = ["rouge", "jaune", "violet"]
+formes   = ["boule", "épis", "port dressé"]
+saisons  = ["printemps", "été"]
+
+def genere_idees(couleurs, formes, saisons,
+                 include=None,   # ex: {"saisons": {"été"}, "formes": {"boule","épis"}}
+                 exclude=None,   # ex: {"couleurs": {"violet"}}
+                 prefer=None,    # ex: {"couleurs": {"rouge"}}
+                 limit=None,     # ex: 5 → ne renvoyer que 5 idées
+                 shuffle_first=True):
+    include = include or {}
+    exclude = exclude or {}
+    prefer  = prefer or {}
+
+    # 1) Génération brute (toutes combinaisons)
+    combos = list(product(couleurs, formes, saisons))  # [(c,f,s), ...]
+
+    # 2) Filtre "include" (garde seulement ce qui est demandé)
+    def keep(triple):
+        c, f, s = triple
+        ok = True
+        if "couleurs" in include: ok &= c in include["couleurs"]
+        if "formes"   in include: ok &= f in include["formes"]
+        if "saisons"  in include: ok &= s in include["saisons"]
+        return ok
+
+    if include:
+        combos = [t for t in combos if keep(t)]
+
+    # 3) Filtre "exclude" (retire ce qui est interdit)
+    def banned(triple):
+        c, f, s = triple
+        if "couleurs" in exclude and c in exclude["couleurs"]: return True
+        if "formes"   in exclude and f in exclude["formes"]:   return True
+        if "saisons"  in exclude and s in exclude["saisons"]:  return True
+        return False
+
+    if exclude:
+        combos = [t for t in combos if not banned(t)]
+
+    # 4) Score de préférence (priorise ce que tu aimes)
+    def score(triple):
+        c, f, s = triple
+        sc = 0
+        if "couleurs" in prefer and c in prefer["couleurs"]: sc += 2
+        if "formes"   in prefer and f in prefer["formes"]:   sc += 1
+        if "saisons"  in prefer and s in prefer["saisons"]:  sc += 1
+        return sc
+
+    # On mélange d’abord (pour éviter un ordre toujours identique),
+    # puis on trie par score descendant.
+    if shuffle_first:
+        shuffle(combos)
+    combos.sort(key=score, reverse=True)
+
+    # 5) Mise en forme finale
+    idees = [f"Massif {c} – {f} – {s}" for (c, f, s) in combos]
+
+    # 6) Limitation éventuelle
+    if limit is not None:
+        idees = idees[:limit]
+
+    return idees
+
+def affiche(idees):
+    print("\n🌿 Idées de massifs :\n")
+    for i, idee in enumerate(idees, start=1):
+        print(f"{i:2d}. {idee}")
+
+# ----------------- EXEMPLES D’USAGE -----------------
+
+# A) Été uniquement, formes boule/épis, privilégier rouge, montrer 6 idées
+idees_A = genere_idees(
+    couleurs, formes, saisons,
+    include={"saisons": {"été"}, "formes": {"boule", "épis"}},
+    prefer={"couleurs": {"rouge"}},
+    limit=6
+)
+affiche(idees_A)
+
+# B) Exclure le violet et "port dressé", trier par préférence pour "printemps"
+idees_B = genere_idees(
+    couleurs, formes, saisons,
+    exclude={"couleurs": {"violet"}, "formes": {"port dressé"}},
+    prefer={"saisons": {"printemps"}}
+)
+affiche(idees_B)
+
+
+# -*- coding: utf-8 -*-
+
+arbustes = [
+    {
+        "nom": "Mahonia × media",
+        "floraison": "novembre–mars (hiver-début printemps)",
+        "couleur": "jaune",
+        "pollinisateurs": "nectar/pollen hivernaux (abeilles, bourdons)",
+        "racines": "drageonnant (rhizomes), croissance modérée"
+    },
+    {
+        "nom": "Viburnum tinus",
+        "floraison": "novembre–avril (hiver-printemps)",
+        "couleur": "blanc/rosé",
+        "pollinisateurs": "source de pollen/nectar en hiver",
+        "racines": "fibreux, compact à modérément profond, non agressif"
+    },
+    {
+        "nom": "Choisya ternata",
+        "floraison": "printemps + souvent été/automne (remontée)",
+        "couleur": "blanc parfumé",
+        "pollinisateurs": "abeilles, papillons (floraison longue possible)",
+        "racines": "fibreux superficiel; éviter l’excès d’eau (drainage)"
+    },
+    {
+        "nom": "Caryopteris × clandonensis",
+        "floraison": "fin été–automne",
+        "couleur": "bleu",
+        "pollinisateurs": "très nectarifère en fin de saison",
+        "racines": "fibreux, non traçant (buisson bas)"
+    },
+    {
+        "nom": "Abelia × grandiflora",
+        "floraison": "fin printemps–automne (longue)",
+        "couleur": "blanc rosé",
+        "pollinisateurs": "très mellifère (longue période)",
+        "racines": "fibreux; préfère sols drainés"
+    },
+    {
+        "nom": "Buddleja davidii",
+        "floraison": "été–début automne",
+        "couleur": "mauve/rose/blanc selon cultivar",
+        "pollinisateurs": "abeilles & papillons",
+        "racines": "fibreux, superficiel et vigoureux; peut drageonner/repartir"
+    }
+]
+
+# Affichage propre
+print("\n🌼 Arbustes mellifères pour floraisons étalées (climat parisien)\n")
+for i, a in enumerate(arbustes, start=1):
+    print(f"{i}. {a['nom']}")
+    print(f"   - Floraison : {a['floraison']}")
+    print(f"   - Couleur   : {a['couleur']}")
+    print(f"   - Pollinis. : {a['pollinisateurs']}")
+    print(f"   - Racines   : {a['racines']}\n")
+
+    brut = ["  Lavande  ", "GAURA", "sauge  "]
+propre = []
+for nom in brut:
+    propre.append(nom.strip().lower())
+print(propre)  # ['lavande', 'gaura', 'sauge']
+
+jours = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
+taches = ["arrosage", "désherbage", "taille légère", "relevé floraison", "paillage", "repos", "balade"]
+
+for j, t in zip(jours, taches):
+    print(f"{j} → {t}")
