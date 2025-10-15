@@ -1,4 +1,38 @@
-nom: Lavande
-hauteur: 70
-saison:
-- été
+# 🧭 Mémo Git – Projet Python_IA
+
+Ce document te rappelle les principales commandes à utiliser dans ton terminal VS Code
+pour synchroniser ton travail local avec GitHub.
+
+---
+
+## 🔄 Routine quotidienne (après chaque modification)
+
+```bash
+git status                # Voir les fichiers modifiés
+git add -A                # Ajouter tous les changements
+git commit -m "Description claire du changement"
+git push                  # Envoyer vers GitHub
+```
+
+---
+
+## 🧰 Commandes utiles
+
+```bash
+git pull                  # Récupérer les mises à jour depuis GitHub
+git log --oneline         # Voir l'historique des commits
+git remote -v             # Vérifier le dépôt lié
+```
+
+---
+
+## ⚙️ Bonnes pratiques
+
+- Toujours **sauvegarder ton fichier avant** de lancer les commandes Git.
+- Ne pas inclure d’environnements virtuels (.venv) ou fichiers temporaires → ils sont ignorés grâce au `.gitignore`.
+- Faire des messages de commit **clairs et courts**.
+- Vérifier sur GitHub après chaque `git push`.
+
+---
+
+🧠 *Astuce :* tu peux rouvrir ce mémo depuis VS Code à tout moment pour copier les commandes.
