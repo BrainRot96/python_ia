@@ -44,3 +44,4 @@ config.toml
 *.env
 .env.local
 secrets.json
+.venv/
