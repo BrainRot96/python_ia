@@ -1,45 +1,42 @@
 # pipeline/pipeline.py
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
-from .fake_llm import FakeLLM
+from typing import Optional, Dict, Any
+
+from .fake_llm import FakeLLM  # défaut si aucun provider n'est passé
 
 @dataclass
 class LLMConfig:
-    max_tokens: int = 256
+    max_tokens: int = 300
     temperature: float = 0.2
 
-# ⬇️ PipelineInput maintenant attend query + context (optionnel)
 @dataclass
 class PipelineInput:
     query: str
-    context: Optional[str] = None
+    context: str = ""
 
 @dataclass
 class PipelineOutput:
     text: str
-    usage: Dict[str, int]
+    usage: Dict[str, Any]
 
 class Pipeline:
-    def __init__(self, llm: FakeLLM | None = None, cfg: LLMConfig | None = None):
-        self.llm = llm or FakeLLM(seed=42)
+    """
+    Pipeline minimal :
+    - prend un 'llm' ayant une méthode .generate(prompt, max_tokens=, temperature=, context=)
+    - si llm est None → utilise FakeLLM
+    """
+    def __init__(self, cfg: Optional[LLMConfig] = None, llm=None):
         self.cfg = cfg or LLMConfig()
+        self.llm = llm or FakeLLM()
 
     def run(self, inp: PipelineInput) -> PipelineOutput:
-        # Construit le prompt final à partir de query + context
-        if inp.context:
-            prompt = (
-                "Contexte:\n"
-                f"{inp.context}\n\n"
-                "Tâche: Réponds de façon concise et utile en t'appuyant sur le contexte.\n"
-                f"Question: {inp.query}"
-            )
-        else:
-            prompt = inp.query
-
-        result = self.llm.generate(
-            prompt,
+        resp = self.llm.generate(
+            prompt=inp.query,
             max_tokens=self.cfg.max_tokens,
             temperature=self.cfg.temperature,
+            context=inp.context,
         )
-        return PipelineOutput(text=result["text"], usage=result["usage"])
+        text = resp.get("text", "")
+        usage = resp.get("usage", {})
+        return PipelineOutput(text=text, usage=usage)
     
