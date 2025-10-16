@@ -3,6 +3,36 @@ import os, sys
 from pathlib import Path
 import streamlit as st
 
+# 🎨 --- Thème visuel personnalisé (UX nature / pro)
+st.markdown("""
+<style>
+body {
+    background-color: #1a1a1a;
+    color: #f4f4f4;
+    font-family: 'Inter', sans-serif;
+}
+section.main > div {
+    padding: 1rem 2rem;
+    border-radius: 12px;
+}
+h1, h2, h3 {
+    color: #a3e635; /* vert clair */
+}
+.stButton>button {
+    background-color: #22c55e;
+    color: white;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    border: none;
+    transition: 0.3s;
+}
+.stButton>button:hover {
+    background-color: #16a34a;
+    transform: scale(1.02);
+}
+</style>
+""", unsafe_allow_html=True)
+
 # -----------------------------------------------------------------------------
 # Imports pipeline
 # -----------------------------------------------------------------------------
