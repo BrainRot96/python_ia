@@ -1,7 +1,12 @@
-# app_streamlit.py — version clean & robuste
+# app_streamlit.py — version clean & robuste (corrigée)
 import os, sys
 from pathlib import Path
 import streamlit as st
+
+# -----------------------------------------------------------------------------
+# Page config DOIT être appelée avant tout autre st.* pour éviter les warnings
+# -----------------------------------------------------------------------------
+st.set_page_config(page_title="Demo Pipeline LLM", page_icon="🧪", layout="wide")
 
 # 🎨 --- Thème visuel personnalisé (UX nature / pro)
 st.markdown("""
@@ -67,6 +72,15 @@ except Exception:
         basic_kpis = tokens_by_provider = runs_over_time = None
 
 # -----------------------------------------------------------------------------
+# (Optionnel) Bridge GPT↔Claude — import protégé
+# -----------------------------------------------------------------------------
+try:
+    from bridge.bridge_ai import BridgeOrchestrator, BridgeConfig
+except Exception:
+    BridgeOrchestrator = None
+    BridgeConfig = None
+
+# -----------------------------------------------------------------------------
 # Helpers UI
 # -----------------------------------------------------------------------------
 def badge(text, color="#2563eb"):
@@ -78,12 +92,12 @@ def badge(text, color="#2563eb"):
 
 @st.cache_data(ttl=10.0)
 def cached_read_events(path: str):
+    # read_events du logger accepte log_path=...
     return read_events(log_path=path)
 
 # -----------------------------------------------------------------------------
 # UI de base
 # -----------------------------------------------------------------------------
-st.set_page_config(page_title="Demo Pipeline LLM", page_icon="🧪", layout="wide")
 st.title("🧪 Demo Pipeline LLM (fake / Ollama)")
 
 # State initial
@@ -104,6 +118,23 @@ with st.sidebar:
     st.header("Paramètres LLM")
     temperature = st.slider("Temperature", 0.0, 1.0, 0.2, 0.1)
     max_tokens  = st.slider("Max tokens", 32, 1024, 300, 16)
+
+    # Bridge : activable à la demande
+    use_bridge = st.checkbox(
+        "Utiliser le bridge GPT↔Claude",
+        value=False,
+        help="Chaîner OpenAI et Anthropic (consomme 2 providers)."
+    )
+    if use_bridge and BridgeOrchestrator is None:
+        st.warning("Bridge indisponible (module non importé). Décoche ou installe le dossier bridge/.")
+
+    chain_mode = None
+    if use_bridge:
+        chain_mode = st.selectbox(
+            "Chaînage modèles",
+            ["solo_gpt", "solo_claude", "claude_then_gpt", "gpt_then_claude"],
+            index=2,
+        )
 
     # ---- Traduction : langue cible
     target_lang = st.selectbox(
@@ -197,20 +228,37 @@ if st.button("▶️ Lancer le pipeline"):
 
         # 4) Guardrails (taille + nettoyage)
         user_payload, was_cut = enforce_limits(rendered["user"])
-        prompt = f"{rendered['system']}\n\n{user_payload}"
+        final_prompt = f"{rendered['system']}\n\n{user_payload}"
 
-        # 5) Exécution pipeline
-        out = pipe.run(PipelineInput(query=prompt, context=""))
+        # 5) Exécution : soit Bridge, soit Pipeline local
+        if use_bridge and BridgeOrchestrator is not None:
+            br = BridgeOrchestrator(BridgeConfig(
+                openai_model="gpt-4o-mini",
+                anthropic_model="claude-3-5-sonnet-20240620",
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ))
+            bridge_res = br.run(final_prompt, mode=chain_mode)
+            text_out = bridge_res["text"]
+            usage_out = bridge_res.get("usage", {})
+            provider_used = f"Bridge:{chain_mode}"
+            model_used = "OpenAI+Anthropic"
+        else:
+            out = pipe.run(PipelineInput(query=final_prompt, context=""))
+            text_out = out.text
+            usage_out = out.usage
+            provider_used = "Ollama" if provider.startswith("Ollama") else "FakeLLM"
+            model_used = (model_name if provider_used == "Ollama" else "fake-llm")
 
         # 6) Log + sauvegarde
         payload = {
             "mode": mode,
-            "provider": "Ollama" if provider.startswith("Ollama") else "FakeLLM",
-            "model": (model_name if provider.startswith("Ollama") else "fake-llm"),
+            "provider": provider_used,
+            "model": model_used,
             "params": {"temperature": temperature, "max_tokens": max_tokens},
             "input": {"query": q, "context": c},
-            "output": {"text": out.text},
-            "usage": out.usage,
+            "output": {"text": text_out},
+            "usage": usage_out,
         }
         try:
             log_event(payload)
@@ -321,3 +369,4 @@ if log_path.exists():
         st.warning(f"Impossible de lire le fichier de log : {e}")
 else:
     st.info("Le fichier n’existe pas encore. Lance une génération pour créer le premier log.")
+    
